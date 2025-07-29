@@ -70,6 +70,7 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: session?.user.id || "demo-user",
+        email: session?.user.email || "demo@possessher.ai",
         is_pro: isPro
       }),
     });
@@ -97,6 +98,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [userMessage],
+          email: session?.user.email || "demo@possessher.ai",
           is_pro: isPro
         }),
       });
@@ -144,7 +146,7 @@ export default function Home() {
           </button>
         </div>
 
-        {!isPro && (
+        {session && !isPro && (
           <div className="mt-8 w-full flex justify-center">
             <a
               href="https://diverto.gumroad.com/l/uummo"
@@ -242,26 +244,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* <section className="py-20 bg-black text-center px-4">
-        <h2 className="text-3xl font-bold mb-4">Get Early Access</h2>
-        <p className="mb-6 text-lg">Be the first to try PossessHer AI. No spam, just waifus.</p>
-        <div className="w-full flex justify-center">
-          <form className="w-full max-w-md flex flex-col sm:flex-row gap-4">
-            <input
-              type="email"
-              placeholder="Your email"
-              className="flex-1 w-full sm:w-auto p-3 rounded-md text-white bg-gray-800 placeholder-gray-400"
-            />
-            <button
-              type="submit"
-              className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-md font-semibold whitespace-nowrap"
-            >
-              Join Waitlist
-            </button>
-          </form>
-        </div>
-      </section> */}
     </main>
   );
 }
