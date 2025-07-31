@@ -34,7 +34,7 @@ export default function Home() {
 
   const fetchQuota = async (user_id: string, email: string) => {
     try {
-      const res = await fetch("https://ge6s5830nh3y17-5000.proxy.runpod.net/usage", {
+      const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id, email }),
@@ -99,7 +99,7 @@ export default function Home() {
     const user_id = session?.user?.id || "demo-user";
     const email = session?.user?.email || "demo@possessher.ai";
 
-    const res = await fetch("https://ge6s5830nh3y17-5000.proxy.runpod.net/generate", {
+    const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -139,7 +139,7 @@ export default function Home() {
     const email = session?.user?.email || "demo@possessher.ai";
 
     try {
-      const res = await fetch("https://ge6s5830nh3y17-5000.proxy.runpod.net/chat", {
+      const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
