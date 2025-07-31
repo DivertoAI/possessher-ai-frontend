@@ -22,16 +22,40 @@ export default function Home() {
   const [chatLoading, setChatLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
+
+  const [freeImagesLeft, setFreeImagesLeft] = useState<number | null>(null);
+  const [freeChatsLeft, setFreeChatsLeft] = useState<number | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClientComponentClient();
 
-  const { isPro } = useUserStatus(session?.user.email);
+  const { isPro } = useUserStatus(session?.user?.email || "");
+
+  const fetchQuota = async (user_id: string, email: string) => {
+    try {
+      const res = await fetch("https://ge6s5830nh3y17-5000.proxy.runpod.net/usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id, email }),
+      });
+
+      const data = await res.json();
+      setFreeImagesLeft(data.image_remaining);
+      setFreeChatsLeft(data.chat_remaining);
+    } catch (err) {
+      console.error("Failed to fetch quota:", err);
+    }
+  };
 
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
-      setSession(data.session);
+      const sess = data.session;
+      setSession(sess);
+      if (sess?.user?.id && sess?.user?.email) {
+        fetchQuota(sess.user.id, sess.user.email);
+      }
     };
 
     getSession();
@@ -40,8 +64,9 @@ export default function Home() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) {
+      if (session?.user?.id && session?.user?.email) {
         setShowAuthModal(false);
+        fetchQuota(session.user.id, session.user.email);
       }
     });
 
@@ -63,15 +88,24 @@ export default function Home() {
   const generateImage = async () => {
     if (!requireAuth()) return;
 
+    if (!isPro && (freeImagesLeft ?? 0) <= 0) {
+      setShowUpgradeNudge(true);
+      return;
+    }
+
     setLoading(true);
     setImgSrc(null);
+
+    const user_id = session?.user?.id || "demo-user";
+    const email = session?.user?.email || "demo@possessher.ai";
+
     const res = await fetch("https://ge6s5830nh3y17-5000.proxy.runpod.net/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        user_id: session?.user.id || "demo-user",
-        email: session?.user.email || "demo@possessher.ai",
-        is_pro: isPro
+        user_id,
+        email,
+        is_pro: isPro,
       }),
     });
 
@@ -79,10 +113,19 @@ export default function Home() {
     const imageObjectURL = URL.createObjectURL(blob);
     setImgSrc(imageObjectURL);
     setLoading(false);
+
+    if (!isPro && session?.user?.id && session?.user?.email) {
+      fetchQuota(session.user.id, session.user.email);
+    }
   };
 
   const handleSend = async () => {
     if (!requireAuth()) return;
+
+    if (!isPro && (freeChatsLeft ?? 0) <= 0) {
+      setShowUpgradeNudge(true);
+      return;
+    }
 
     const trimmed = chatInput.trim();
     if (!trimmed) return;
@@ -92,14 +135,18 @@ export default function Home() {
     setChatInput("");
     setChatLoading(true);
 
+    const user_id = session?.user?.id || "demo-user";
+    const email = session?.user?.email || "demo@possessher.ai";
+
     try {
       const res = await fetch("https://ge6s5830nh3y17-5000.proxy.runpod.net/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [userMessage],
-          email: session?.user.email || "demo@possessher.ai",
-          is_pro: isPro
+          user_id,
+          email,
+          is_pro: isPro,
         }),
       });
 
@@ -119,6 +166,9 @@ export default function Home() {
       ]);
     } finally {
       setChatLoading(false);
+      if (!isPro && session?.user?.id && session?.user?.email) {
+        fetchQuota(session.user.id, session.user.email);
+      }
     }
   };
 
@@ -145,6 +195,12 @@ export default function Home() {
             {showChat ? "Close Chat" : "Try Chat Now"}
           </button>
         </div>
+
+        {session && !isPro && freeImagesLeft !== null && freeChatsLeft !== null && (
+          <p className="text-sm text-pink-300 mt-3">
+            {freeImagesLeft} image generation{freeImagesLeft !== 1 && "s"} left • {freeChatsLeft} chat{freeChatsLeft !== 1 && "s"} left
+          </p>
+        )}
 
         {session && !isPro && (
           <div className="mt-8 w-full flex justify-center">
@@ -231,16 +287,41 @@ export default function Home() {
         )}
       </section>
 
-      {showAuthModal && (
+      {(showAuthModal || showUpgradeNudge) && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
           <div className="bg-gray-900 p-6 rounded-xl shadow-xl w-full max-w-md">
-            <Auth onSuccess={() => setShowAuthModal(false)} />
-            <button
-              onClick={() => setShowAuthModal(false)}
-              className="mt-4 text-sm text-gray-400 hover:text-white"
-            >
-              Close
-            </button>
+            {showUpgradeNudge && session && !isPro ? (
+              <>
+                <h3 className="text-xl font-semibold mb-4 text-yellow-400">You&apos;ve reached your free limit 💔</h3>
+                <p className="mb-6 text-gray-300">
+                  Unlock unlimited waifu generation and chat interactions by upgrading to Pro.
+                </p>
+                <a
+                  href="https://diverto.gumroad.com/l/uummo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl text-lg font-semibold transition"
+                >
+                  Upgrade to Pro 💖
+                </a>
+                <button
+                  onClick={() => setShowUpgradeNudge(false)}
+                  className="mt-4 text-sm text-gray-400 hover:text-white text-center w-full"
+                >
+                  Maybe later
+                </button>
+              </>
+            ) : (
+              <>
+                <Auth onSuccess={() => setShowAuthModal(false)} />
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="mt-4 text-sm text-gray-400 hover:text-white"
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
