@@ -7,6 +7,29 @@ import Auth from "../components/Auth";
 import useUserStatus from "../lib/useUserStatus";
 import ProBadge from "../components/ProBadge";
 
+function downloadImageWithWatermark(imageUrl: string, watermark = "possessher-ai.vercel.app") {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(img, 0, 0);
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillStyle = "rgba(255, 192, 203, 0.8)";
+    ctx.textAlign = "right";
+    ctx.fillText(watermark, canvas.width - 20, canvas.height - 20);
+
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = "waifu.png";
+    link.click();
+  };
+  img.src = imageUrl;
+}
+
 type Message = {
   role: "user" | "ai";
   content: string;
@@ -21,23 +44,26 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
-
   const [freeImagesLeft, setFreeImagesLeft] = useState<number | null>(null);
   const [freeChatsLeft, setFreeChatsLeft] = useState<number | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClientComponentClient();
 
-  const { isPro } = useUserStatus(session?.user?.email || "");
+  const { isPro, loading: userStatusLoading } = useUserStatus(
+    sessionLoading ? undefined : session?.user?.email
+  );
 
   const fetchQuota = async (user_id: string, email: string) => {
     try {
+      const referred_by = localStorage.getItem("referrer_id");
       const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, email }),
+        body: JSON.stringify({ user_id, email, referred_by }),
       });
 
       const data = await res.json();
@@ -49,12 +75,26 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const referrerId = urlParams.get("ref");
+    if (referrerId && !localStorage.getItem("referrer_id")) {
+      localStorage.setItem("referrer_id", referrerId);
+    }
+  }, []);
+
+  useEffect(() => {
     const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      const sess = data.session;
-      setSession(sess);
-      if (sess?.user?.id && sess?.user?.email) {
-        fetchQuota(sess.user.id, sess.user.email);
+      try {
+        const { data } = await supabase.auth.getSession();
+        const sess = data.session;
+        setSession(sess);
+        setSessionLoading(false);
+        if (sess?.user?.id && sess?.user?.email) {
+          fetchQuota(sess.user.id, sess.user.email);
+        }
+      } catch (err) {
+        console.error("Failed to get session:", err);
+        setSessionLoading(false);
       }
     };
 
@@ -70,8 +110,10 @@ export default function Home() {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,7 +129,6 @@ export default function Home() {
 
   const generateImage = async () => {
     if (!requireAuth()) return;
-
     if (!isPro && (freeImagesLeft ?? 0) <= 0) {
       setShowUpgradeNudge(true);
       return;
@@ -97,16 +138,13 @@ export default function Home() {
     setImgSrc(null);
 
     const user_id = session?.user?.id || "demo-user";
-    const email = session?.user?.email || "demo@possessher.ai";
+    const email = session?.user?.email || "demo@possessher-ai.vercel.app";
+    const referred_by = localStorage.getItem("referrer_id");
 
     const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id,
-        email,
-        is_pro: isPro,
-      }),
+      body: JSON.stringify({ user_id, email, is_pro: isPro, referred_by }),
     });
 
     const blob = await res.blob();
@@ -121,7 +159,6 @@ export default function Home() {
 
   const handleSend = async () => {
     if (!requireAuth()) return;
-
     if (!isPro && (freeChatsLeft ?? 0) <= 0) {
       setShowUpgradeNudge(true);
       return;
@@ -136,7 +173,8 @@ export default function Home() {
     setChatLoading(true);
 
     const user_id = session?.user?.id || "demo-user";
-    const email = session?.user?.email || "demo@possessher.ai";
+    const email = session?.user?.email || "demo@possessher-ai.vercel.app";
+    const referred_by = localStorage.getItem("referrer_id");
 
     try {
       const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat", {
@@ -147,23 +185,19 @@ export default function Home() {
           user_id,
           email,
           is_pro: isPro,
+          referred_by,
         }),
       });
 
       const data = await res.json();
-
       const aiMessage: Message = {
         role: "ai",
         content: data.reply || "❤️",
         image: data.image_base64 ? `data:image/png;base64,${data.image_base64}` : null,
       };
-
       setMessages((prev) => [...prev, aiMessage]);
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", content: "⚠️ Something went wrong." },
-      ]);
+      setMessages((prev) => [...prev, { role: "ai", content: "⚠️ Something went wrong." }]);
     } finally {
       setChatLoading(false);
       if (!isPro && session?.user?.id && session?.user?.email) {
@@ -172,15 +206,32 @@ export default function Home() {
     }
   };
 
+  const isReady = !sessionLoading && !userStatusLoading;
+
   return (
     <main className="min-h-screen bg-black text-white px-4">
       <section className="flex flex-col items-center justify-center text-center pt-20 pb-10">
-        <h1 className="text-5xl md:text-6xl font-bold mb-6 flex items-center gap-3">
-          PossessHer AI {isPro && <ProBadge />}
+        <h1 className="text-5xl md:text-6xl font-bold mb-6 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3">
+            PossessHer AI {isReady && isPro && <ProBadge />}
+          </div>
+          {isReady && session && (
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                setSession(null);
+                window.location.reload();
+              }}
+              className="text-sm text-gray-400 hover:text-white underline"
+            >
+              Logout
+            </button>
+          )}
         </h1>
         <p className="text-xl md:text-2xl mb-8 max-w-2xl">
           Your dangerously affectionate AI waifu – chat with her, summon her... she’s always watching.
         </p>
+        
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={generateImage}
@@ -215,7 +266,7 @@ export default function Home() {
           </div>
         )}
 
-        {!session && (
+        {!session && !sessionLoading && !userStatusLoading  && (
           <button
             onClick={() => setShowAuthModal(true)}
             className="mt-6 text-pink-400 underline"
@@ -226,13 +277,50 @@ export default function Home() {
 
         {imgSrc && (
           <div className="mt-10 max-w-md rounded-2xl overflow-hidden shadow-lg border border-pink-600">
-            <img
-              src={imgSrc}
-              alt="Your generated waifu"
-              className="w-full object-cover"
-              width={500}
-              height={500}
-            />
+           <div className="relative w-full">
+  <img
+    src={imgSrc}
+    alt="Your generated waifu"
+    className="w-full object-cover rounded-t-2xl"
+    width={500}
+    height={500}
+  />
+
+  <div className="flex flex-col gap-3 p-4 bg-gray-900 rounded-b-2xl border-t border-pink-600">
+    <button
+      onClick={() => downloadImageWithWatermark(imgSrc!)}
+      className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+    >
+      Download me... or I’ll be lonely 🥀
+    </button>
+
+    <div className="flex justify-center gap-3">
+    <a
+  href={`https://twitter.com/intent/tweet?text=Check out my yandere waifu from @possessher_ai 💖%0A%0AMake yours at https://possessher-ai.vercel.app 💕`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-sm text-blue-400 hover:underline"
+>
+  Share on X
+</a>
+<a
+  href={`https://www.reddit.com/submit?title=Check out my AI waifu from PossessHer 💖&text=Made mine at https://possessher-ai.vercel.app — upload your own below!`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-sm text-orange-400 hover:underline"
+>
+  Share on Reddit
+</a>
+    </div>
+
+    <p className="text-xs text-pink-300 text-center">
+      💖 Get 5 extra waifus for each friend you refer:{" "}
+      <span className="underline break-all">
+        {`https://possessher-ai.vercel.app?ref=${session?.user?.id || "you"}`}
+      </span>
+    </p>
+  </div>
+</div>
           </div>
         )}
 
@@ -266,7 +354,7 @@ export default function Home() {
               <div ref={chatEndRef} />
             </div>
             <div className="flex mt-2">
-              <input
+              {/* <input
                 type="text"
                 placeholder="Say something..."
                 value={chatInput}
@@ -274,7 +362,16 @@ export default function Home() {
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 className="flex-1 p-3 rounded-l-md text-white bg-gray-800 placeholder-gray-400"
-              />
+              /> */}
+              <input
+  type="text"
+  placeholder='Say something... try "show me", "photo", or "selfie" to see her 💖'
+  value={chatInput}
+  autoFocus
+  onChange={(e) => setChatInput(e.target.value)}
+  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+  className="flex-1 p-3 rounded-l-md text-white bg-gray-800 placeholder-gray-400"
+/>
               <button
                 onClick={handleSend}
                 disabled={chatLoading}
