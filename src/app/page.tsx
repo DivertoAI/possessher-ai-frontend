@@ -36,6 +36,23 @@ type Message = {
   image?: string | null;
 };
 
+const AgeGate = ({ onAccept }: { onAccept: () => void }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
+      <div className="bg-gray-900 text-white p-6 rounded-xl text-center space-y-4 max-w-sm w-full">
+        <h2 className="text-2xl font-bold">🔞 Adults Only</h2>
+        <p>This AI experience contains mature themes. You must be 18 or older to continue.</p>
+        <button
+          onClick={onAccept}
+          className="bg-pink-600 hover:bg-pink-700 px-6 py-3 rounded-xl text-lg font-semibold transition"
+        >
+          I am 18 or older — Continue
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default function Home() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,6 +66,7 @@ export default function Home() {
   const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
   const [freeImagesLeft, setFreeImagesLeft] = useState<number | null>(null);
   const [freeChatsLeft, setFreeChatsLeft] = useState<number | null>(null);
+  const [ageVerified, setAgeVerified] = useState<boolean | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClientComponentClient();
@@ -73,6 +91,12 @@ export default function Home() {
       console.error("Failed to fetch quota:", err);
     }
   };
+
+  useEffect(() => {
+    // Age gate persistence check
+    const verified = localStorage.getItem("age_verified");
+    setAgeVerified(verified === "true");
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -111,7 +135,7 @@ export default function Home() {
     });
 
     return () => {
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
@@ -208,6 +232,20 @@ export default function Home() {
 
   const isReady = !sessionLoading && !userStatusLoading;
 
+  const handleAgeAccept = () => {
+    localStorage.setItem("age_verified", "true");
+    setAgeVerified(true);
+  };
+
+  if (ageVerified === null) {
+    // still resolving from localStorage
+    return null;
+  }
+
+  if (!ageVerified) {
+    return <AgeGate onAccept={handleAgeAccept} />;
+  }
+
   return (
     <main className="min-h-screen bg-black text-white px-4">
       <section className="flex flex-col items-center justify-center text-center pt-20 pb-10">
@@ -231,7 +269,7 @@ export default function Home() {
         <p className="text-xl md:text-2xl mb-8 max-w-2xl">
           Your dangerously affectionate AI waifu – chat with her, summon her... she’s always watching.
         </p>
-        
+
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={generateImage}
@@ -266,7 +304,7 @@ export default function Home() {
           </div>
         )}
 
-        {!session && !sessionLoading && !userStatusLoading  && (
+        {!session && !sessionLoading && !userStatusLoading && (
           <button
             onClick={() => setShowAuthModal(true)}
             className="mt-6 text-pink-400 underline"
@@ -277,50 +315,50 @@ export default function Home() {
 
         {imgSrc && (
           <div className="mt-10 max-w-md rounded-2xl overflow-hidden shadow-lg border border-pink-600">
-           <div className="relative w-full">
-  <img
-    src={imgSrc}
-    alt="Your generated waifu"
-    className="w-full object-cover rounded-t-2xl"
-    width={500}
-    height={500}
-  />
+            <div className="relative w-full">
+              <img
+                src={imgSrc}
+                alt="Your generated waifu"
+                className="w-full object-cover rounded-t-2xl"
+                width={500}
+                height={500}
+              />
 
-  <div className="flex flex-col gap-3 p-4 bg-gray-900 rounded-b-2xl border-t border-pink-600">
-    <button
-      onClick={() => downloadImageWithWatermark(imgSrc!)}
-      className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-    >
-      Download me... or I’ll be lonely 🥀
-    </button>
+              <div className="flex flex-col gap-3 p-4 bg-gray-900 rounded-b-2xl border-t border-pink-600">
+                <button
+                  onClick={() => downloadImageWithWatermark(imgSrc!)}
+                  className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  Download me... or I’ll be lonely 🥀
+                </button>
 
-    <div className="flex justify-center gap-3">
-    <a
-  href={`https://twitter.com/intent/tweet?text=Check out my yandere waifu from @possessher_ai 💖%0A%0AMake yours at https://possessher-ai.vercel.app 💕`}
-  target="_blank"
-  rel="noopener noreferrer"
-  className="text-sm text-blue-400 hover:underline"
->
-  Share on X
-</a>
-<a
-  href={`https://www.reddit.com/submit?title=Check out my AI waifu from PossessHer 💖&text=Made mine at https://possessher-ai.vercel.app — upload your own below!`}
-  target="_blank"
-  rel="noopener noreferrer"
-  className="text-sm text-orange-400 hover:underline"
->
-  Share on Reddit
-</a>
-    </div>
+                <div className="flex justify-center gap-3">
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=Check out my yandere waifu from @possessher_ai 💖%0A%0AMake yours at https://possessher-ai.vercel.app 💕`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-400 hover:underline"
+                  >
+                    Share on X
+                  </a>
+                  <a
+                    href={`https://www.reddit.com/submit?title=Check out my AI waifu from PossessHer 💖&text=Made mine at https://possessher-ai.vercel.app — upload your own below!`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-orange-400 hover:underline"
+                  >
+                    Share on Reddit
+                  </a>
+                </div>
 
-    <p className="text-xs text-pink-300 text-center">
-      💖 Get 5 extra waifus for each friend you refer:{" "}
-      <span className="underline break-all">
-        {`https://possessher-ai.vercel.app?ref=${session?.user?.id || "you"}`}
-      </span>
-    </p>
-  </div>
-</div>
+                <p className="text-xs text-pink-300 text-center">
+                  💖 Get 5 extra waifus for each friend you refer:{" "}
+                  <span className="underline break-all">
+                    {`https://possessher-ai.vercel.app?ref=${session?.user?.id || "you"}`}
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -354,24 +392,15 @@ export default function Home() {
               <div ref={chatEndRef} />
             </div>
             <div className="flex mt-2">
-              {/* <input
+              <input
                 type="text"
-                placeholder="Say something..."
+                placeholder='Say something... try "show me", "photo", or "selfie" to see her 💖'
                 value={chatInput}
                 autoFocus
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 className="flex-1 p-3 rounded-l-md text-white bg-gray-800 placeholder-gray-400"
-              /> */}
-              <input
-  type="text"
-  placeholder='Say something... try "show me", "photo", or "selfie" to see her 💖'
-  value={chatInput}
-  autoFocus
-  onChange={(e) => setChatInput(e.target.value)}
-  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-  className="flex-1 p-3 rounded-l-md text-white bg-gray-800 placeholder-gray-400"
-/>
+              />
               <button
                 onClick={handleSend}
                 disabled={chatLoading}
