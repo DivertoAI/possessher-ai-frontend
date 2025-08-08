@@ -7,6 +7,7 @@ import Auth from "../components/Auth";
 import useUserStatus from "../lib/useUserStatus";
 import ProBadge from "../components/ProBadge";
 
+
 function downloadImageWithWatermark(
   imageUrl: string,
   watermark = "possessher-ai.vercel.app"
@@ -436,7 +437,7 @@ export default function Home() {
               </button>
             </div>
           </div>
-        )}
+        )} 
       </section>
 
       {(showAuthModal || showUpgradeNudge) && (
