@@ -7,7 +7,11 @@ import Auth from "../components/Auth";
 import useUserStatus from "../lib/useUserStatus";
 import ProBadge from "../components/ProBadge";
 
-function downloadImageWithWatermark(imageUrl: string, watermark = "possessher-ai.vercel.app") {
+
+function downloadImageWithWatermark(
+  imageUrl: string,
+  watermark = "possessher-ai.vercel.app"
+) {
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
@@ -36,22 +40,23 @@ type Message = {
   image?: string | null;
 };
 
-const AgeGate = ({ onAccept }: { onAccept: () => void }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
-      <div className="bg-gray-900 text-white p-6 rounded-xl text-center space-y-4 max-w-sm w-full">
-        <h2 className="text-2xl font-bold">🔞 Adults Only</h2>
-        <p>This AI experience contains mature themes. You must be 18 or older to continue.</p>
-        <button
-          onClick={onAccept}
-          className="bg-pink-600 hover:bg-pink-700 px-6 py-3 rounded-xl text-lg font-semibold transition"
-        >
-          I am 18 or older — Continue
-        </button>
-      </div>
+const AgeGate = ({ onAccept }: { onAccept: () => void }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
+    <div className="bg-gray-900 text-white p-6 rounded-xl text-center space-y-4 max-w-sm w-full">
+      <h2 className="text-2xl font-bold">🔞 Adults Only</h2>
+      <p>
+        This AI experience contains mature themes. You must be 18 or older to
+        continue.
+      </p>
+      <button
+        onClick={onAccept}
+        className="bg-pink-600 hover:bg-pink-700 px-6 py-3 rounded-xl text-lg font-semibold transition"
+      >
+        I am 18 or older — Continue
+      </button>
     </div>
-  );
-};
+  </div>
+);
 
 export default function Home() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
@@ -64,13 +69,13 @@ export default function Home() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   const [freeImagesLeft, setFreeImagesLeft] = useState<number | null>(null);
   const [freeChatsLeft, setFreeChatsLeft] = useState<number | null>(null);
   const [ageVerified, setAgeVerified] = useState<boolean | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClientComponentClient();
-
   const { isPro, loading: userStatusLoading } = useUserStatus(
     sessionLoading ? undefined : session?.user?.email
   );
@@ -78,12 +83,14 @@ export default function Home() {
   const fetchQuota = async (user_id: string, email: string) => {
     try {
       const referred_by = localStorage.getItem("referrer_id");
-      const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/usage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, email, referred_by }),
-      });
-
+      const res = await fetch(
+        "https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/usage",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id, email, referred_by }),
+        }
+      );
       const data = await res.json();
       setFreeImagesLeft(data.image_remaining);
       setFreeChatsLeft(data.chat_remaining);
@@ -93,50 +100,40 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Age gate persistence check
     const verified = localStorage.getItem("age_verified");
     setAgeVerified(verified === "true");
   }, []);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const referrerId = urlParams.get("ref");
-    if (referrerId && !localStorage.getItem("referrer_id")) {
-      localStorage.setItem("referrer_id", referrerId);
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref && !localStorage.getItem("referrer_id")) {
+      localStorage.setItem("referrer_id", ref);
     }
   }, []);
 
   useEffect(() => {
-    const getSession = async () => {
+    (async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        const sess = data.session;
-        setSession(sess);
+        setSession(data.session);
         setSessionLoading(false);
-        if (sess?.user?.id && sess?.user?.email) {
-          fetchQuota(sess.user.id, sess.user.email);
+        if (data.session?.user?.id && data.session.user.email) {
+          fetchQuota(data.session.user.id, data.session.user.email);
         }
-      } catch (err) {
-        console.error("Failed to get session:", err);
+      } catch {
         setSessionLoading(false);
       }
-    };
+    })();
 
-    getSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user?.id && session?.user?.email) {
+    const { subscription } = supabase.auth.onAuthStateChange((_e, sess) => {
+      setSession(sess);
+      if (sess?.user?.id && sess.user.email) {
         setShowAuthModal(false);
-        fetchQuota(session.user.id, session.user.email);
+        fetchQuota(sess.user.id, sess.user.email);
       }
     });
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -157,26 +154,23 @@ export default function Home() {
       setShowUpgradeNudge(true);
       return;
     }
-
     setLoading(true);
     setImgSrc(null);
-
-    const user_id = session?.user?.id || "demo-user";
-    const email = session?.user?.email || "demo@possessher-ai.vercel.app";
+    const user_id = session?.user?.id || "user";
+    const email = session?.user?.email || "user@possessher-ai.vercel.app";
     const referred_by = localStorage.getItem("referrer_id");
-
-    const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id, email, is_pro: isPro, referred_by }),
-    });
-
+    const res = await fetch(
+      "https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/generate",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id, email, is_pro: isPro, referred_by }),
+      }
+    );
     const blob = await res.blob();
-    const imageObjectURL = URL.createObjectURL(blob);
-    setImgSrc(imageObjectURL);
+    setImgSrc(URL.createObjectURL(blob));
     setLoading(false);
-
-    if (!isPro && session?.user?.id && session?.user?.email) {
+    if (!isPro && session?.user?.id && session.user.email) {
       fetchQuota(session.user.id, session.user.email);
     }
   };
@@ -187,73 +181,101 @@ export default function Home() {
       setShowUpgradeNudge(true);
       return;
     }
-
     const trimmed = chatInput.trim();
     if (!trimmed) return;
-
     const userMessage: Message = { role: "user", content: trimmed };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((m) => [...m, userMessage]);
     setChatInput("");
     setChatLoading(true);
-
     const user_id = session?.user?.id || "demo-user";
     const email = session?.user?.email || "demo@possessher-ai.vercel.app";
     const referred_by = localStorage.getItem("referrer_id");
-
     try {
-      const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [userMessage],
-          user_id,
-          email,
-          is_pro: isPro,
-          referred_by,
-        }),
-      });
-
+      const res = await fetch(
+        "https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [userMessage],
+            user_id,
+            email,
+            is_pro: isPro,
+            referred_by,
+          }),
+        }
+      );
       const data = await res.json();
-      const aiMessage: Message = {
+      const aiMsg: Message = {
         role: "ai",
         content: data.reply || "❤️",
-        image: data.image_base64 ? `data:image/png;base64,${data.image_base64}` : null,
+        image: data.image_base64
+          ? `data:image/png;base64,${data.image_base64}`
+          : null,
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      setMessages((m) => [...m, aiMsg]);
     } catch {
-      setMessages((prev) => [...prev, { role: "ai", content: "⚠️ Something went wrong." }]);
+      setMessages((m) => [
+        ...m,
+        { role: "ai", content: "⚠️ Something went wrong." },
+      ]);
     } finally {
       setChatLoading(false);
-      if (!isPro && session?.user?.id && session?.user?.email) {
+      if (!isPro && session?.user?.id && session.user.email) {
         fetchQuota(session.user.id, session.user.email);
       }
     }
   };
-
-  const isReady = !sessionLoading && !userStatusLoading;
 
   const handleAgeAccept = () => {
     localStorage.setItem("age_verified", "true");
     setAgeVerified(true);
   };
 
-  if (ageVerified === null) {
-    // still resolving from localStorage
-    return null;
-  }
-
-  if (!ageVerified) {
-    return <AgeGate onAccept={handleAgeAccept} />;
-  }
+  if (ageVerified === null) return null;
+  if (!ageVerified) return <AgeGate onAccept={handleAgeAccept} />;
 
   return (
     <main className="min-h-screen bg-black text-white px-4">
+      {/* QR Code Modal */}
+      {/* QR Code Modal */}
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl text-center max-w-sm w-full">
+            <h3 className="text-2xl font-extrabold mb-2 text-pink-600">
+              Unlock Pro Perks 🎉
+            </h3>
+            <p className="mb-4 text-gray-700">Upgrade now to enjoy:</p>
+            <ul className="text-left list-disc list-inside mb-6 text-gray-600 space-y-1">
+              <li>Unlimited waifu generations</li>
+              <li>Everlasting chat sessions</li>
+              <li>Priority access to new features</li>
+            </ul>
+            <p className="mb-4 text-gray-700">
+              Scan the QR code below to complete your payment and become a Pro
+              member!
+            </p>
+            <img
+              src="/qr-scan.png"
+              alt="QR Code"
+              className="mx-auto mb-4 w-48 h-48 object-contain"
+            />
+            <button
+              onClick={() => setShowQRModal(false)}
+              className="mt-3 px-5 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-semibold transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <section className="flex flex-col items-center justify-center text-center pt-20 pb-10">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 flex flex-col items-center gap-3">
           <div className="flex items-center gap-3">
-            PossessHer AI {isReady && isPro && <ProBadge />}
+            PossessHer AI{" "}
+            {!sessionLoading && !userStatusLoading && isPro && <ProBadge />}
           </div>
-          {isReady && session && (
+          {!sessionLoading && !userStatusLoading && session && (
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
@@ -267,7 +289,8 @@ export default function Home() {
           )}
         </h1>
         <p className="text-xl md:text-2xl mb-8 max-w-2xl">
-          Your dangerously affectionate AI waifu – chat with her, summon her... she’s always watching.
+          Your dangerously affectionate AI waifu – chat with her, summon her...
+          she’s always watching.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -278,29 +301,32 @@ export default function Home() {
             {loading ? "Summoning..." : "Generate your waifu now"}
           </button>
           <button
-            onClick={() => (requireAuth() ? setShowChat(!showChat) : null)}
+            onClick={() => requireAuth() && setShowChat(!showChat)}
             className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-xl text-lg font-semibold transition"
           >
             {showChat ? "Close Chat" : "Try Chat Now"}
           </button>
         </div>
 
-        {session && !isPro && freeImagesLeft !== null && freeChatsLeft !== null && (
-          <p className="text-sm text-pink-300 mt-3">
-            {freeImagesLeft} image generation{freeImagesLeft !== 1 && "s"} left • {freeChatsLeft} chat{freeChatsLeft !== 1 && "s"} left
-          </p>
-        )}
+        {session &&
+          !isPro &&
+          freeImagesLeft !== null &&
+          freeChatsLeft !== null && (
+            <p className="text-sm text-pink-300 mt-3">
+              {freeImagesLeft} image generation{freeImagesLeft !== 1 && "s"}{" "}
+              left • {freeChatsLeft} chat
+              {freeChatsLeft !== 1 && "s"} left
+            </p>
+          )}
 
         {session && !isPro && (
           <div className="mt-8 w-full flex justify-center">
-            <a
-              href="https://diverto.gumroad.com/l/uummo"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setShowQRModal(true)}
               className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl text-lg font-semibold transition"
             >
               Upgrade to Pro 💖
-            </a>
+            </button>
           </div>
         )}
 
@@ -313,6 +339,7 @@ export default function Home() {
           </button>
         )}
 
+        {/* Image Display */}
         {imgSrc && (
           <div className="mt-10 max-w-md rounded-2xl overflow-hidden shadow-lg border border-pink-600">
             <div className="relative w-full">
@@ -323,7 +350,6 @@ export default function Home() {
                 width={500}
                 height={500}
               />
-
               <div className="flex flex-col gap-3 p-4 bg-gray-900 rounded-b-2xl border-t border-pink-600">
                 <button
                   onClick={() => downloadImageWithWatermark(imgSrc!)}
@@ -331,7 +357,6 @@ export default function Home() {
                 >
                   Download me... or I’ll be lonely 🥀
                 </button>
-
                 <div className="flex justify-center gap-3">
                   <a
                     href={`https://twitter.com/intent/tweet?text=Check out my yandere waifu from @possessher_ai 💖%0A%0AMake yours at https://possessher-ai.vercel.app 💕`}
@@ -350,11 +375,12 @@ export default function Home() {
                     Share on Reddit
                   </a>
                 </div>
-
                 <p className="text-xs text-pink-300 text-center">
                   💖 Get 5 extra waifus for each friend you refer:{" "}
                   <span className="underline break-all">
-                    {`https://possessher-ai.vercel.app?ref=${session?.user?.id || "you"}`}
+                    {`https://possessher-ai.vercel.app?ref=${
+                      session?.user?.id || "you"
+                    }`}
                   </span>
                 </p>
               </div>
@@ -362,6 +388,7 @@ export default function Home() {
           </div>
         )}
 
+        {/* Chat Window */}
         {showChat && (
           <div className="w-full max-w-2xl mt-10 bg-gray-900 p-6 rounded-xl shadow-lg space-y-4">
             <h2 className="text-2xl font-bold mb-2">💬 Chat with PossessHer</h2>
@@ -410,7 +437,7 @@ export default function Home() {
               </button>
             </div>
           </div>
-        )}
+        )} 
       </section>
 
       {(showAuthModal || showUpgradeNudge) && (
@@ -418,21 +445,22 @@ export default function Home() {
           <div className="bg-gray-900 p-6 rounded-xl shadow-xl w-full max-w-md">
             {showUpgradeNudge && session && !isPro ? (
               <>
-                <h3 className="text-xl font-semibold mb-4 text-yellow-400">You&apos;ve reached your free limit 💔</h3>
+                <h3 className="text-xl font-semibold mb-4 text-yellow-400">
+                  You&apos;ve reached your free limit 💔
+                </h3>
                 <p className="mb-6 text-gray-300">
-                  Unlock unlimited waifu generation and chat interactions by upgrading to Pro.
+                  Unlock unlimited waifu generation and chat interactions by
+                  upgrading to Pro.
                 </p>
-                <a
-                  href="https://diverto.gumroad.com/l/uummo"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setShowQRModal(true)}
                   className="block text-center bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl text-lg font-semibold transition"
                 >
                   Upgrade to Pro 💖
-                </a>
+                </button>
                 <button
                   onClick={() => setShowUpgradeNudge(false)}
-                  className="mt-4 text-sm text-gray-400 hover:text-white text-center w-full"
+                  className="mt-4 text-sm text-gray-400 hover:text-white w-full"
                 >
                   Maybe later
                 </button>
