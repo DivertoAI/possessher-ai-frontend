@@ -22,20 +22,23 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [userMessage] }),
-      });
+      const res = await fetch(
+        "https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [userMessage] }),
+        }
+      );
 
       const data = await res.json();
 
-       const aiMessage: Message = {
+      const aiMessage: Message = {
         role: "ai",
         content: data.reply || "❤️",
         image: data.image_url
-  ? `https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net${data.image_url}`
-  : null,
+          ? `https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net${data.image_url}`
+          : null,
       };
 
       setMessages((prev) => [...prev, aiMessage]);

@@ -7,7 +7,10 @@ import Auth from "../components/Auth";
 import useUserStatus from "../lib/useUserStatus";
 import ProBadge from "../components/ProBadge";
 
-function downloadImageWithWatermark(imageUrl: string, watermark = "possessher-ai.vercel.app") {
+function downloadImageWithWatermark(
+  imageUrl: string,
+  watermark = "possessher-ai.vercel.app"
+) {
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
@@ -40,7 +43,10 @@ const AgeGate = ({ onAccept }: { onAccept: () => void }) => (
   <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
     <div className="bg-gray-900 text-white p-6 rounded-xl text-center space-y-4 max-w-sm w-full">
       <h2 className="text-2xl font-bold">🔞 Adults Only</h2>
-      <p>This AI experience contains mature themes. You must be 18 or older to continue.</p>
+      <p>
+        This AI experience contains mature themes. You must be 18 or older to
+        continue.
+      </p>
       <button
         onClick={onAccept}
         className="bg-pink-600 hover:bg-pink-700 px-6 py-3 rounded-xl text-lg font-semibold transition"
@@ -77,7 +83,7 @@ export default function Home() {
     try {
       const referred_by = localStorage.getItem("referrer_id");
       const res = await fetch(
-        "https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/usage",
+        "https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/usage",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -153,7 +159,7 @@ export default function Home() {
     const email = session?.user?.email || "demo@possessher-ai.vercel.app";
     const referred_by = localStorage.getItem("referrer_id");
     const res = await fetch(
-      "https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/generate",
+      "https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/generate",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -185,22 +191,33 @@ export default function Home() {
     const referred_by = localStorage.getItem("referrer_id");
     try {
       const res = await fetch(
-        "https://z4ccobk1u42ifa-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat",
+        "https://jm2mpjqk5havji-5000-3epju8y6q7c9vdcjefor.proxy.runpod.net/chat",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [userMessage], user_id, email, is_pro: isPro, referred_by }),
+          body: JSON.stringify({
+            messages: [userMessage],
+            user_id,
+            email,
+            is_pro: isPro,
+            referred_by,
+          }),
         }
       );
       const data = await res.json();
       const aiMsg: Message = {
         role: "ai",
         content: data.reply || "❤️",
-        image: data.image_base64 ? `data:image/png;base64,${data.image_base64}` : null,
+        image: data.image_base64
+          ? `data:image/png;base64,${data.image_base64}`
+          : null,
       };
       setMessages((m) => [...m, aiMsg]);
     } catch {
-      setMessages((m) => [...m, { role: "ai", content: "⚠️ Something went wrong." }]);
+      setMessages((m) => [
+        ...m,
+        { role: "ai", content: "⚠️ Something went wrong." },
+      ]);
     } finally {
       setChatLoading(false);
       if (!isPro && session?.user?.id && session.user.email) {
@@ -221,43 +238,43 @@ export default function Home() {
     <main className="min-h-screen bg-black text-white px-4">
       {/* QR Code Modal */}
       {/* QR Code Modal */}
-{showQRModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-2xl shadow-xl text-center max-w-sm w-full">
-      <h3 className="text-2xl font-extrabold mb-2 text-pink-600">
-        Unlock Pro Perks 🎉
-      </h3>
-      <p className="mb-4 text-gray-700">
-        Upgrade now to enjoy:
-      </p>
-      <ul className="text-left list-disc list-inside mb-6 text-gray-600 space-y-1">
-        <li>Unlimited waifu generations</li>
-        <li>Everlasting chat sessions</li>
-        <li>Priority access to new features</li>
-      </ul>
-      <p className="mb-4 text-gray-700">
-        Scan the QR code below to complete your payment and become a Pro member!
-      </p>
-      <img
-        src="/qr-scan.png"
-        alt="QR Code"
-        className="mx-auto mb-4 w-48 h-48 object-contain"
-      />
-      <button
-        onClick={() => setShowQRModal(false)}
-        className="mt-3 px-5 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-semibold transition"
-      >
-        Close
-      </button>
-    </div>
-  </div>
-)}
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl text-center max-w-sm w-full">
+            <h3 className="text-2xl font-extrabold mb-2 text-pink-600">
+              Unlock Pro Perks 🎉
+            </h3>
+            <p className="mb-4 text-gray-700">Upgrade now to enjoy:</p>
+            <ul className="text-left list-disc list-inside mb-6 text-gray-600 space-y-1">
+              <li>Unlimited waifu generations</li>
+              <li>Everlasting chat sessions</li>
+              <li>Priority access to new features</li>
+            </ul>
+            <p className="mb-4 text-gray-700">
+              Scan the QR code below to complete your payment and become a Pro
+              member!
+            </p>
+            <img
+              src="/qr-scan.png"
+              alt="QR Code"
+              className="mx-auto mb-4 w-48 h-48 object-contain"
+            />
+            <button
+              onClick={() => setShowQRModal(false)}
+              className="mt-3 px-5 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-semibold transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <section className="flex flex-col items-center justify-center text-center pt-20 pb-10">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 flex flex-col items-center gap-3">
           <div className="flex items-center gap-3">
-            PossessHer AI {(!sessionLoading && !userStatusLoading && isPro) && <ProBadge />}
+            PossessHer AI{" "}
+            {!sessionLoading && !userStatusLoading && isPro && <ProBadge />}
           </div>
-          {(!sessionLoading && !userStatusLoading && session) && (
+          {!sessionLoading && !userStatusLoading && session && (
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
@@ -271,7 +288,8 @@ export default function Home() {
           )}
         </h1>
         <p className="text-xl md:text-2xl mb-8 max-w-2xl">
-          Your dangerously affectionate AI waifu – chat with her, summon her... she’s always watching.
+          Your dangerously affectionate AI waifu – chat with her, summon her...
+          she’s always watching.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -289,12 +307,16 @@ export default function Home() {
           </button>
         </div>
 
-        {session && !isPro && freeImagesLeft !== null && freeChatsLeft !== null && (
-          <p className="text-sm text-pink-300 mt-3">
-            {freeImagesLeft} image generation{freeImagesLeft !== 1 && "s"} left • {freeChatsLeft} chat
-            {freeChatsLeft !== 1 && "s"} left
-          </p>
-        )}
+        {session &&
+          !isPro &&
+          freeImagesLeft !== null &&
+          freeChatsLeft !== null && (
+            <p className="text-sm text-pink-300 mt-3">
+              {freeImagesLeft} image generation{freeImagesLeft !== 1 && "s"}{" "}
+              left • {freeChatsLeft} chat
+              {freeChatsLeft !== 1 && "s"} left
+            </p>
+          )}
 
         {session && !isPro && (
           <div className="mt-8 w-full flex justify-center">
@@ -308,7 +330,10 @@ export default function Home() {
         )}
 
         {!session && !sessionLoading && !userStatusLoading && (
-          <button onClick={() => setShowAuthModal(true)} className="mt-6 text-pink-400 underline">
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="mt-6 text-pink-400 underline"
+          >
             Login / Sign Up
           </button>
         )}
@@ -352,7 +377,9 @@ export default function Home() {
                 <p className="text-xs text-pink-300 text-center">
                   💖 Get 5 extra waifus for each friend you refer:{" "}
                   <span className="underline break-all">
-                    {`https://possessher-ai.vercel.app?ref=${session?.user?.id || "you"}`}
+                    {`https://possessher-ai.vercel.app?ref=${
+                      session?.user?.id || "you"
+                    }`}
                   </span>
                 </p>
               </div>
@@ -396,7 +423,7 @@ export default function Home() {
                 placeholder='Say something... try "show me", "photo", or "selfie" to see her 💖'
                 value={chatInput}
                 autoFocus
-                onChange={(e) => setChatInput(e.target.value)}                     
+                onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 className="flex-1 p-3 rounded-l-md text-white bg-gray-800 placeholder-gray-400"
               />
@@ -421,7 +448,8 @@ export default function Home() {
                   You&apos;ve reached your free limit 💔
                 </h3>
                 <p className="mb-6 text-gray-300">
-                  Unlock unlimited waifu generation and chat interactions by upgrading to Pro.
+                  Unlock unlimited waifu generation and chat interactions by
+                  upgrading to Pro.
                 </p>
                 <button
                   onClick={() => setShowQRModal(true)}
