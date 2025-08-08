@@ -244,36 +244,51 @@ return () => {
     <main className="min-h-screen bg-black text-white px-4">
       {/* QR Code Modal */}
       {/* QR Code Modal */}
-      {showQRModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl text-center max-w-sm w-full">
-            <h3 className="text-2xl font-extrabold mb-2 text-pink-600">
-              Unlock Pro Perks 🎉
-            </h3>
-            <p className="mb-4 text-gray-700">Upgrade now to enjoy:</p>
-            <ul className="text-left list-disc list-inside mb-6 text-gray-600 space-y-1">
-              <li>Unlimited waifu generations</li>
-              <li>Everlasting chat sessions</li>
-              <li>Priority access to new features</li>
-            </ul>
-            <p className="mb-4 text-gray-700">
-              Scan the QR code below to complete your payment and become a Pro
-              member!
-            </p>
-            <img
-              src="/qr-scan.png"
-              alt="QR Code"
-              className="mx-auto mb-4 w-48 h-48 object-contain"
-            />
-            <button
-              onClick={() => setShowQRModal(false)}
-              className="mt-3 px-5 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-semibold transition"
-            >
-              Close
-            </button>
-          </div>
+    {showQRModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-2xl shadow-xl text-center max-w-lg w-full">
+      <h3 className="text-2xl font-extrabold mb-2 text-pink-600">
+        Unlock Pro Perks 🎉
+      </h3>
+      <p className="mb-4 text-gray-700">Upgrade now to enjoy:</p>
+      <ul className="text-left list-disc list-inside mb-6 text-gray-600 space-y-1">
+        <li>Unlimited waifu generations</li>
+        <li>Everlasting chat sessions</li>
+        <li>Priority access to new features</li>
+      </ul>
+      <p className="mb-4 text-gray-700">
+        Scan a QR code below to complete your payment and become a Pro member!
+      </p>
+      <div className="flex items-center justify-center space-x-6">
+        {/* 1 Month QR */}
+        <div className="text-center">
+          <img
+            src="/scan1.png"
+            alt="QR Code - Pro 1 Month"
+            className="mx-auto mb-2 w-40 h-40 object-contain"
+          />
+          <p className="text-sm font-semibold text-gray-800">₹999 — 1 Month</p>
         </div>
-      )}
+
+        {/* 3 Month QR */}
+        <div className="text-center">
+          <img
+            src="/scan2.png"
+            alt="QR Code - Pro 3 Months"
+            className="mx-auto mb-2 w-40 h-40 object-contain"
+          />
+          <p className="text-sm font-semibold text-gray-800">₹2,499 — 3 Months</p>
+        </div>
+      </div>
+      <button
+        onClick={() => setShowQRModal(false)}
+        className="mt-6 px-5 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-semibold transition"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
       <section className="flex flex-col items-center justify-center text-center pt-20 pb-10">
         <h1 className="text-5xl md:text-6xl font-bold mb-6 flex flex-col items-center gap-3">
           <div className="flex items-center gap-3">
