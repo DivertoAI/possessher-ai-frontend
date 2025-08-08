@@ -125,15 +125,20 @@ export default function Home() {
       }
     })();
 
-    const { subscription } = supabase.auth.onAuthStateChange((_e, sess) => {
-      setSession(sess);
-      if (sess?.user?.id && sess.user.email) {
-        setShowAuthModal(false);
-        fetchQuota(sess.user.id, sess.user.email);
-      }
-    });
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+  setSession(sess);
+  if (sess?.user?.id && sess.user.email) {
+    setShowAuthModal(false);
+    fetchQuota(sess.user.id, sess.user.email);
+  }
+});
 
-    return () => subscription.unsubscribe();
+
+return () => {
+  subscription.unsubscribe();
+};
+
+  
   }, []);
 
   useEffect(() => {
