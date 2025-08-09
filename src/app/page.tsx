@@ -244,7 +244,7 @@ return () => {
     <main className="min-h-screen bg-black text-white px-4">
       {/* QR Code Modal */}
       {/* QR Code Modal */}
-    {showQRModal && (
+   {showQRModal && (
   <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
     <div className="bg-white p-6 rounded-2xl shadow-xl text-center max-w-lg w-full">
       <h3 className="text-2xl font-extrabold mb-2 text-pink-600">
@@ -259,7 +259,18 @@ return () => {
       <p className="mb-4 text-gray-700">
         Scan a QR code below to complete your payment and become a Pro member!
       </p>
+
       <div className="flex items-center justify-center space-x-6">
+        {/* 7-Day / ₹499 QR (scan0 first) */}
+        <div className="text-center">
+          <img
+            src="/scan0.png"
+            alt="QR Code - Pro 7-Day Pass"
+            className="mx-auto mb-2 w-40 h-40 object-contain"
+          />
+          <p className="text-sm font-semibold text-gray-800">₹499 — 7-Day Pass</p>
+        </div>
+
         {/* 1 Month QR */}
         <div className="text-center">
           <img
@@ -280,6 +291,7 @@ return () => {
           <p className="text-sm font-semibold text-gray-800">₹2,499 — 3 Months</p>
         </div>
       </div>
+
       <button
         onClick={() => setShowQRModal(false)}
         className="mt-6 px-5 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-semibold transition"
